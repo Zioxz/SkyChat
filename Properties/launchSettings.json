@@ -9,7 +9,7 @@
         }
     },
     "profiles": {
-        "SkyAuctionBase": {
+        "SkyAuctionChat": {
             "commandName": "Project",
             "dotnetRunMessages": "true",
             "launchBrowser": true,

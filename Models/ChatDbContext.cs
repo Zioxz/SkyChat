@@ -1,19 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Coflnet.Sky.Base.Models
+namespace Coflnet.Sky.Chat.Models
 {
     /// <summary>
     /// <see cref="DbContext"/> For flip tracking
     /// </summary>
-    public class BaseDbContext : DbContext
+    public class ChatDbContext : DbContext
     {
-        public DbSet<Flip> Flips { get; set; }
+        public DbSet<DbMessage> Messages { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<Client> Clients { get; set; }
+        public DbSet<Mute> Mute { get; set; }
 
         /// <summary>
-        /// Creates a new instance of <see cref="BaseDbContext"/>
+        /// Creates a new instance of <see cref="ChatDbContext"/>
         /// </summary>
         /// <param name="options"></param>
-        public BaseDbContext(DbContextOptions<BaseDbContext> options)
+        public ChatDbContext(DbContextOptions<ChatDbContext> options)
         : base(options)
         {
         }
@@ -26,9 +29,9 @@ namespace Coflnet.Sky.Base.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Flip>(entity =>
+            modelBuilder.Entity<DbMessage>(entity =>
             {
-                entity.HasIndex(e => new { e.AuctionId });
+                entity.HasIndex(e => new { e.Sender });
             });
         }
     }
