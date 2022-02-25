@@ -56,7 +56,8 @@ namespace Coflnet.Sky.Chat.Services
             using var scope = scopeFactory.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ChatDbContext>();
             // make sure all migrations are applied
-            await context.Database.MigrateAsync();
+            // runs syncronously to avoid multiple migrations starting simotaniously 
+            context.Database.Migrate();
 
             while (!stoppingToken.IsCancellationRequested)
             {

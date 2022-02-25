@@ -37,7 +37,7 @@ namespace Coflnet.Sky.Chat.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("send")]
-        public async Task<ChatMessage> TrackFlip([FromBody] ChatMessage flip, [FromHeader]string authorization)
+        public async Task<ChatMessage> SendMessage([FromBody] ChatMessage flip, [FromHeader]string authorization)
         {
             if(string.IsNullOrEmpty(authorization))
                 throw new ApiException("missing_authorization", "The required authorization header wasn't passed. Set it to the token you api received.");
@@ -53,15 +53,15 @@ namespace Coflnet.Sky.Chat.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("client")]
-        public async Task<CientCreationResponse> TrackFlip([FromBody] Client client)
+        public async Task<CientCreationResponse> CreateClient([FromBody] Client client)
         {
             return new CientCreationResponse(await service.CreateClient(client));
         }
 
         /// <summary>
-        /// Create a nw Client
+        /// Create a new mute for an user
         /// </summary>
-        /// <param name="client"></param>
+        /// <param name="mute">Data about the mute</param>
         /// <returns></returns>
         [HttpPost]
         [Route("mute")]

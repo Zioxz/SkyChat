@@ -50,6 +50,10 @@ namespace Coflnet.Sky.Chat.Models
         /// <value></value>
         [DataMember(Name = "webhook")]
         public string WebHook { get; set; }
+        /// <summary>
+        /// Auth header value for the webhook
+        /// </summary>
+        /// <value></value>
         [DataMember(Name = "webhookAuth")]
         public string WebhookAuth { get; set; }
         /// <summary>

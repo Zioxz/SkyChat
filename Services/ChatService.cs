@@ -8,13 +8,9 @@ using Newtonsoft.Json;
 
 namespace Coflnet.Sky.Chat.Services
 {
-
-    public class ApiException : hypixel.CoflnetException
-    {
-        public ApiException(string slug, string message) : base(slug, message)
-        {
-        }
-    }
+    /// <summary>
+    /// Core service handling validation and distribution of messages
+    /// </summary>
     public class ChatService
     {
         private ChatDbContext db;
@@ -22,6 +18,12 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
+        /// <summary>
+        /// Creates a new instance of <see cref="ChatService"/>
+        /// </summary>
+        /// <param name="db"></param>
+        /// <param name="connection"></param>
+        /// <param name="backgroundService"></param>
         public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService)
         {
             this.db = db;
