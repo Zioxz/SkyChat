@@ -71,7 +71,7 @@ namespace Coflnet.Sky.Chat.Services
             var dbSave = db.SaveChangesAsync();
             if(string.IsNullOrEmpty(message.Name))
             {
-                var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Name));
+                var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Uuid));
                 message.Name = result.Content;
             }
             var pubsub = connection.GetSubscriber();
