@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using Newtonsoft.Json;
 using RestSharp;
+using System.Collections.Concurrent;
 
 namespace Coflnet.Sky.Chat.Services
 {
@@ -18,6 +19,7 @@ namespace Coflnet.Sky.Chat.Services
         private ConnectionMultiplexer connection;
         private ChatBackgroundService backgroundService;
         private RestClient restClient = new RestClient("https://sky.coflnet.com");
+        private ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
         Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
         /// <summary>
@@ -48,10 +50,10 @@ namespace Coflnet.Sky.Chat.Services
                 message.ClientName = client.Name;
             if(message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
-            var mute = await db.Mute.Where(u=>u.Uuid == message.Uuid && u.Expires > DateTime.Now).FirstOrDefaultAsync();
+            /*var mute = await db.Mute.Where(u=>u.Uuid == message.Uuid && u.Expires > DateTime.Now).FirstOrDefaultAsync();
             if(mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message}");
-            var existsAlready = await db.Messages.Where(f => f.Id > db.Messages.Max(m=>m.Id) - 10 && f.Sender == message.Uuid && f.Content == message.Message).AnyAsync();
+                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message}");*/
+            var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if(existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
             var dbMessage = new DbMessage()
@@ -63,6 +65,9 @@ namespace Coflnet.Sky.Chat.Services
             };
             
             db.Messages.Add(dbMessage);
+            recentMessages.Enqueue(dbMessage);
+            if(recentMessages.Count >= 10)
+                recentMessages.TryDequeue(out _);
             var dbSave = db.SaveChangesAsync();
             if(string.IsNullOrEmpty(message.Name))
             {
