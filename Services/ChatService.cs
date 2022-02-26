@@ -5,6 +5,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 using Newtonsoft.Json;
+using RestSharp;
 
 namespace Coflnet.Sky.Chat.Services
 {
@@ -16,6 +17,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatDbContext db;
         private ConnectionMultiplexer connection;
         private ChatBackgroundService backgroundService;
+        private RestClient restClient = new RestClient("https://sky.coflnet.com");
         Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
         /// <summary>
@@ -40,6 +42,8 @@ namespace Coflnet.Sky.Chat.Services
         public async Task<bool> SendMessage(ChatMessage message, string clientToken)
         {
             var client = backgroundService.GetClient(clientToken);
+            if(String.IsNullOrEmpty(message.Uuid))
+                throw new ApiException("invalid_uuid","The uuid of the sending player has to be set");
             if(message.ClientName == null)
                 message.ClientName = client.Name;
             if(message.ClientName != client.Name)
@@ -60,6 +64,11 @@ namespace Coflnet.Sky.Chat.Services
             
             db.Messages.Add(dbMessage);
             var dbSave = db.SaveChangesAsync();
+            if(string.IsNullOrEmpty(message.Name))
+            {
+                var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Name));
+                message.Name = result.Content;
+            }
             var pubsub = connection.GetSubscriber();
             await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
             _ = Task.Run(async()=>await backgroundService.SendWebhooks(message));
