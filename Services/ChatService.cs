@@ -72,7 +72,7 @@ namespace Coflnet.Sky.Chat.Services
             if(string.IsNullOrEmpty(message.Name))
             {
                 var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Uuid));
-                message.Name = result.Content;
+                message.Name = JsonConvert.DeserializeObject<string>(result.Content);
             }
             var pubsub = connection.GetSubscriber();
             await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
