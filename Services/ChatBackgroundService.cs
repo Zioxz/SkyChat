@@ -73,25 +73,29 @@ namespace Coflnet.Sky.Chat.Services
         {
             var client = new HttpClient();
             var serialized = JsonConvert.SerializeObject(message);
-            await Task.WhenAll(Clients.Select(c =>
+            await Task.WhenAll(Clients.Select(async c =>
             {
                 var hook = c.Value;
                 var content = new StringContent(serialized, Encoding.UTF8, "application/json");
 
                 if (c.Value.Name.Contains("tfm"))
+                {
+                    if(message.ClientName.Contains("tfm"))
+                        return;
                     content = new StringContent(JsonConvert.SerializeObject(new {
                         uuid = message.Uuid,
                         isPremium = true,
                         message = message.Message,
                         apiKey = c.Value.WebhookAuth
                     }), Encoding.UTF8, "application/json");
+                }
 
                 var request = new HttpRequestMessage(HttpMethod.Post, hook.WebHook)
                 {
                     Content = content
                 };
                 request.Headers.Add("Authorization", hook.WebhookAuth);
-                return client.SendAsync(request);
+                await client.SendAsync(request);
             }));
         }
 
