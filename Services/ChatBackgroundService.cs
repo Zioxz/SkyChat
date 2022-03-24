@@ -62,7 +62,7 @@ namespace Coflnet.Sky.Chat.Services
             while (!stoppingToken.IsCancellationRequested)
             {
                 Clients = new ConcurrentDictionary<string, Client>(await context.Clients.ToDictionaryAsync(c => c.ApiKey));
-                Webhooks = Clients.Select(c => (c.Value.WebHook, c.Value.WebhookAuth)).Where(w => !string.IsNullOrEmpty(w.WebHook)).ToList();
+                //Webhooks = Clients.Select(c => (c.Value.WebHook, c.Value.WebhookAuth, c)).Where(w => !string.IsNullOrEmpty(w.WebHook)).ToList();
                 await Task.Delay(TimeSpan.FromMinutes(10), stoppingToken);
 
             }
@@ -73,9 +73,19 @@ namespace Coflnet.Sky.Chat.Services
         {
             var client = new HttpClient();
             var serialized = JsonConvert.SerializeObject(message);
-            var content = new StringContent(serialized, Encoding.UTF8, "application/json");
-            await Task.WhenAll(Webhooks.Select(hook =>
+            await Task.WhenAll(Clients.Select(c =>
             {
+                var hook = c.Value;
+                var content = new StringContent(serialized, Encoding.UTF8, "application/json");
+
+                if (c.Value.Name.Contains("tfm"))
+                    content = new StringContent(JsonConvert.SerializeObject(new {
+                        uuid = message.Uuid,
+                        isPremium = true,
+                        message = message.Message,
+                        apiKey = config["TFM_KEY"]
+                    }), Encoding.UTF8, "application/json");
+
                 var request = new HttpRequestMessage(HttpMethod.Post, hook.WebHook)
                 {
                     Content = content
