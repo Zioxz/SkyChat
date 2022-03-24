@@ -44,17 +44,17 @@ namespace Coflnet.Sky.Chat.Services
         public async Task<bool> SendMessage(ChatMessage message, string clientToken)
         {
             var client = backgroundService.GetClient(clientToken);
-            if(String.IsNullOrEmpty(message.Uuid))
-                throw new ApiException("invalid_uuid","The uuid of the sending player has to be set");
-            if(message.ClientName == null)
+            if (String.IsNullOrEmpty(message.Uuid))
+                throw new ApiException("invalid_uuid", "The uuid of the sending player has to be set");
+            if (message.ClientName == null)
                 message.ClientName = client.Name;
-            if(message.ClientName != client.Name)
+            if (message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
             /*var mute = await db.Mute.Where(u=>u.Uuid == message.Uuid && u.Expires > DateTime.Now).FirstOrDefaultAsync();
             if(mute != default)
                 throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message}");*/
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
-            if(existsAlready)
+            if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
             var dbMessage = new DbMessage()
             {
@@ -63,20 +63,28 @@ namespace Coflnet.Sky.Chat.Services
                 Sender = message.Uuid,
                 Timestamp = DateTime.Now
             };
-            
+
             db.Messages.Add(dbMessage);
             recentMessages.Enqueue(dbMessage);
-            if(recentMessages.Count >= 10)
+            if (recentMessages.Count >= 10)
                 recentMessages.TryDequeue(out _);
             var dbSave = db.SaveChangesAsync();
-            if(string.IsNullOrEmpty(message.Name))
+            if (string.IsNullOrEmpty(message.Name))
             {
                 var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Uuid));
-                message.Name = JsonConvert.DeserializeObject<string>(result.Content);
+                try
+                {
+                    message.Name = JsonConvert.DeserializeObject<string>(result.Content);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine(result.Content);
+                    message.Name = "invalid name";
+                }
             }
             var pubsub = connection.GetSubscriber();
             await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
-            _ = Task.Run(async()=>await backgroundService.SendWebhooks(message));
+            _ = Task.Run(async () => await backgroundService.SendWebhooks(message));
             await dbSave;
             messagesSent.Inc();
             return true;
@@ -101,10 +109,10 @@ namespace Coflnet.Sky.Chat.Services
         /// <returns></returns>
         public async Task<Client> CreateClient(Client client)
         {
-            if(await db.Clients.Where(c=>c.Name == client.Name).AnyAsync())
+            if (await db.Clients.Where(c => c.Name == client.Name).AnyAsync())
                 throw new ApiException("client_exists", "A client with the same name already exists");
             var key = System.Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24));
-            Console.WriteLine("new key stars with " + key.Substring(0,4));
+            Console.WriteLine("new key stars with " + key.Substring(0, 4));
             client.ApiKey = key;
             db.Add(client);
             await db.SaveChangesAsync();
