@@ -83,7 +83,7 @@ namespace Coflnet.Sky.Chat.Services
                         uuid = message.Uuid,
                         isPremium = true,
                         message = message.Message,
-                        apiKey = config["TFM_KEY"]
+                        apiKey = c.Value.WebhookAuth
                     }), Encoding.UTF8, "application/json");
 
                 var request = new HttpRequestMessage(HttpMethod.Post, hook.WebHook)
