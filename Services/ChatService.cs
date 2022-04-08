@@ -7,6 +7,7 @@ using StackExchange.Redis;
 using Newtonsoft.Json;
 using RestSharp;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Coflnet.Sky.Chat.Services
 {
@@ -20,6 +21,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         private RestClient restClient = new RestClient("https://sky.coflnet.com");
         private ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
+        static HashSet<string> BadWords = new() { "cock", "penis", "ass" };
         Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
         /// <summary>
@@ -69,6 +71,11 @@ namespace Coflnet.Sky.Chat.Services
             if (recentMessages.Count >= 10)
                 recentMessages.TryDequeue(out _);
             var dbSave = db.SaveChangesAsync();
+
+            if(message.Message.ToLower().Split(' ', ',', '-').Any(word => BadWords.Contains(word)))
+                throw new ApiException("bad_words", "message contains bad words and was denied");
+
+
             if (string.IsNullOrEmpty(message.Name))
             {
                 var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Uuid));

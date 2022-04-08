@@ -4,7 +4,7 @@ using System.Net;
 using System.Reflection;
 using Coflnet.Sky.Chat.Models;
 using Coflnet.Sky.Chat.Services;
-using hypixel;
+using Coflnet.Sky.Core;
 using Jaeger.Samplers;
 using Jaeger.Senders;
 using Jaeger.Senders.Thrift;
