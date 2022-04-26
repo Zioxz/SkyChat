@@ -23,6 +23,20 @@ namespace Coflnet.Sky.Chat.Models
         [System.ComponentModel.DataAnnotations.StringLength(32)]
         public string Uuid { get; set; }
         /// <summary>
+        /// Uuid of user performing the mute
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "muter")]
+        [System.ComponentModel.DataAnnotations.StringLength(32)]
+        public string Muter { get; set; }
+        /// <summary>
+        /// Uuid of user performing the mute
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "unMuter")]
+        [System.ComponentModel.DataAnnotations.StringLength(32)]
+        public string UnMuter { get; set; }
+        /// <summary>
         /// Message for the user
         /// </summary>
         /// <value></value>
@@ -34,6 +48,18 @@ namespace Coflnet.Sky.Chat.Models
         /// <value></value>
         [DataMember(Name = "reason")]
         public string Reason { get; set; }
+        /// <summary>
+        /// What client software added the mute
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "clientId")]
+        public int ClientId { get; set; }
+        /// <summary>
+        /// What client software added the mute
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "umClientId")]
+        public int UnMuteClientId { get; set; }
         /// <summary>
         /// When this was created
         /// </summary>
@@ -47,5 +73,44 @@ namespace Coflnet.Sky.Chat.Models
         /// <value></value>
         [DataMember(Name = "expires")]
         public DateTime Expires { get; set; }
+        /// <summary>
+        /// The state of the mute
+        /// </summary>
+        /// <value></value>
+        public MuteStatus Status {get;set;}
+    }
+
+    public enum MuteStatus 
+    {
+        NONE,
+        SLOW_MODE,
+        VERY_SLOW_MODE,
+        FILTER = 4,
+        MUTE = 8,
+        CANCELED = 16
+    }
+
+    public class UnMute
+    {
+        /// <summary>
+        /// Uuid of the target user
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "target")]
+        [System.ComponentModel.DataAnnotations.StringLength(32)]
+        public string Uuid { get; set; }
+        /// <summary>
+        /// Uuid of user performing the mute
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "unMuter")]
+        [System.ComponentModel.DataAnnotations.StringLength(32)]
+        public string UnMuter { get; set; }
+        /// <summary>
+        /// Internal reason
+        /// </summary>
+        /// <value></value>
+        [DataMember(Name = "reason")]
+        public string Reason { get; set; }
     }
 }

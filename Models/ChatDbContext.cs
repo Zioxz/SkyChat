@@ -33,6 +33,10 @@ namespace Coflnet.Sky.Chat.Models
             {
                 entity.HasIndex(e => new { e.Sender });
             });
+            modelBuilder.Entity<Mute>(entity =>
+            {
+                entity.HasIndex(e => new { e.Uuid, e.Expires, e.Status });
+            });
         }
     }
 }

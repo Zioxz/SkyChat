@@ -46,6 +46,11 @@ namespace Coflnet.Sky.Chat.Services
             return client;
         }
 
+        internal Client GetClientByName(string clientName)
+        {
+            return Clients.Values.Where(c=>c.Name == clientName).FirstOrDefault();
+        }
+
         /// <summary>
         /// Called by asp.net on startup
         /// </summary>

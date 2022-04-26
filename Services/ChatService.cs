@@ -52,9 +52,9 @@ namespace Coflnet.Sky.Chat.Services
                 message.ClientName = client.Name;
             if (message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
-            /*var mute = await db.Mute.Where(u=>u.Uuid == message.Uuid && u.Expires > DateTime.Now).FirstOrDefaultAsync();
+            var mute = await db.Mute.Where(u=>u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
             if(mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message}");*/
+                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message ?? "you violated a rule"}");
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
@@ -101,12 +101,48 @@ namespace Coflnet.Sky.Chat.Services
         /// Add a mute to an user
         /// </summary>
         /// <param name="mute"></param>
+        /// <param name="clientToken"></param>
         /// <returns></returns>
-        public async Task<Mute> MuteUser(Mute mute)
+        public async Task<Mute> MuteUser(Mute mute, string clientToken)
         {
+            var client = backgroundService.GetClient(clientToken);
+            mute.ClientId = client.Id;
             db.Add(mute);
             await db.SaveChangesAsync();
+            if(!client.Name.Contains("tfm"))
+            {
+                var apiClient = new RestClient("https://chat.thom.club/");
+                var request = new RestRequest("mute", Method.POST);
+                var tfm = backgroundService.GetClientByName("tfm");
+                if(tfm == null)
+                    return mute;
+                var parameters = new {
+                        uuid = mute.Uuid,
+                        muter = 267680402594988033,
+                        until = (mute.Expires - new DateTime(1970,1,1,0,0,0, DateTimeKind.Utc)).TotalMilliseconds,
+                        reason = mute.Reason,
+                        key = tfm.WebhookAuth,
+                    };
+                request.AddJsonBody(parameters);
+                var response = await apiClient.ExecuteAsync(request);
+                Console.WriteLine("mute response: " + response.Content);
+            }
             return mute;
+        }
+
+        public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
+        {
+            var client = backgroundService.GetClient(clientToken);
+            var mute = await db.Mute.Where(m=>m.Uuid == unmute.Uuid && m.Expires > DateTime.UtcNow).FirstOrDefaultAsync();
+            if(mute == null)
+                throw new ApiException("no_mute_found", $"There was no active mute for the user {unmute.Uuid}");
+            
+            mute.Status |= MuteStatus.CANCELED;
+            mute.UnMuteClientId = client.Id;
+            mute.UnMuter = unmute.UnMuter;
+            await db.SaveChangesAsync();
+
+            return unmute;
         }
 
         /// <summary>
