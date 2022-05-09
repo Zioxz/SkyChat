@@ -21,7 +21,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         private static RestClient restClient = new RestClient("https://sky.coflnet.com");
         private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-        static HashSet<string> BadWords = new() { "cock", "penis", "ass", "my ah", "/ah" };
+        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "my ah", "/ah " };
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
         /// <summary>
@@ -72,7 +72,7 @@ namespace Coflnet.Sky.Chat.Services
                 recentMessages.TryDequeue(out _);
             var dbSave = db.SaveChangesAsync();
 
-            if (message.Message.ToLower().Split(' ', ',', '-').Any(word => BadWords.Contains(word)))
+            if (BadWords.Any(word => message.Message.ToLower().Contains(word)))
                 throw new ApiException("bad_words", "message contains bad words and was denied");
 
             var tries = 0;
