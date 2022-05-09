@@ -19,10 +19,10 @@ namespace Coflnet.Sky.Chat.Services
         private ChatDbContext db;
         private ConnectionMultiplexer connection;
         private ChatBackgroundService backgroundService;
-        private RestClient restClient = new RestClient("https://sky.coflnet.com");
-        private ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-        static HashSet<string> BadWords = new() { "cock", "penis", "ass" };
-        Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
+        private static RestClient restClient = new RestClient("https://sky.coflnet.com");
+        private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
+        static HashSet<string> BadWords = new() { "cock", "penis", "ass", "my ah", "/ah" };
+        static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
 
         /// <summary>
         /// Creates a new instance of <see cref="ChatService"/>
