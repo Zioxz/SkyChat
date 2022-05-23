@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using RestSharp;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.Sky.Chat.Services
 {
@@ -23,6 +24,7 @@ namespace Coflnet.Sky.Chat.Services
         private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
         static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "my ah", "/ah " };
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
+        private ILogger<ChatService> Logger;
 
         /// <summary>
         /// Creates a new instance of <see cref="ChatService"/>
@@ -30,11 +32,12 @@ namespace Coflnet.Sky.Chat.Services
         /// <param name="db"></param>
         /// <param name="connection"></param>
         /// <param name="backgroundService"></param>
-        public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService)
+        public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService, ILogger<ChatService> logger)
         {
             this.db = db;
             this.connection = connection;
             this.backgroundService = backgroundService;
+            Logger = logger;
         }
 
         /// <summary>
@@ -52,12 +55,22 @@ namespace Coflnet.Sky.Chat.Services
                 message.ClientName = client.Name;
             if (message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
-            var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
-            if (mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message ?? "you violated a rule"}");
+            
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
+
+            try
+            {
+                var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
+                if (mute != default)
+                    throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message ?? "you violated a rule"}");
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(e, "testing mute");
+            }
+            
             var dbMessage = new DbMessage()
             {
                 ClientId = client.Id,
