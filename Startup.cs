@@ -114,12 +114,14 @@ namespace Coflnet.Sky.Chat
                         using var span = OpenTracing.Util.GlobalTracer.Instance.BuildSpan("error").StartActive();
                         span.Span.Log(exceptionHandlerPathFeature?.Error?.Message);
                         span.Span.Log(exceptionHandlerPathFeature?.Error?.StackTrace);
+                        var shortId = span.Span.Context.TraceId.Substring(0, 6);
+                        span.Span.SetTag("id", shortId);
                         var traceId = System.Net.Dns.GetHostName().Replace("commands", "").Trim('-') + "." + span.Span.Context.TraceId;
                         await context.Response.WriteAsync(
                             JsonConvert.SerializeObject(new
                             {
                                 Slug = "internal_error",
-                                Message = "An unexpected internal error occured. Please check that your request is valid. If it is please report he error and include the Trace.",
+                                Message = $"An unexpected internal error occured. Please check that your request is valid. If it is please report the error and include the Id {shortId}.",
                                 Trace = traceId
                             }));
                         errorCount.Inc();
