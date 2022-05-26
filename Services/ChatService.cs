@@ -79,11 +79,9 @@ namespace Coflnet.Sky.Chat.Services
                 Timestamp = DateTime.Now
             };
 
-            db.Messages.Add(dbMessage);
             recentMessages.Enqueue(dbMessage);
             if (recentMessages.Count >= 10)
                 recentMessages.TryDequeue(out _);
-            var dbSave = db.SaveChangesAsync();
 
             if (BadWords.Any(word => message.Message.ToLower().Contains(word)))
                 throw new ApiException("bad_words", "message contains bad words and was denied");
@@ -108,8 +106,10 @@ namespace Coflnet.Sky.Chat.Services
             }
             var pubsub = connection.GetSubscriber();
             await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
+
+            db.Messages.Add(dbMessage);
+            await db.SaveChangesAsync();
             _ = Task.Run(async () => await backgroundService.SendWebhooks(message));
-            await dbSave;
             messagesSent.Inc();
             return true;
         }
