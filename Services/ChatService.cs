@@ -55,22 +55,16 @@ namespace Coflnet.Sky.Chat.Services
                 message.ClientName = client.Name;
             if (message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
-            
+
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
 
-            try
-            {
-                var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
-                if (mute != default)
-                    throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message ?? "you violated a rule"}");
-            }
-            catch (Exception e)
-            {
-                Logger.LogError(e, "testing mute");
-            }
-            
+
+            var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
+            if (mute != default)
+                throw new ApiException("user_muted", $"You are muted until {mute.Expires} because {mute.Message ?? "you violated a rule"}");
+
             var dbMessage = new DbMessage()
             {
                 ClientId = client.Id,
