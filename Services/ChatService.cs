@@ -154,6 +154,25 @@ namespace Coflnet.Sky.Chat.Services
             mute.UnMuter = unmute.UnMuter;
             await db.SaveChangesAsync();
 
+            if (!client.Name.Contains("tfm"))
+            {
+                var apiClient = new RestClient("https://chat.thom.club/");
+                var request = new RestRequest("unmute", Method.POST);
+                var tfm = backgroundService.GetClientByName("tfm");
+                if (tfm == null)
+                    return unmute;
+                var parameters = new
+                {
+                    uuid = mute.Uuid,
+                    unmuter = 267680402594988033,
+                    reason = unmute.Reason,
+                    key = tfm.WebhookAuth,
+                };
+                request.AddJsonBody(parameters);
+                var response = await apiClient.ExecuteAsync(request);
+                Console.WriteLine("unmute response: " + response.Content);
+            }
+
             return unmute;
         }
 
