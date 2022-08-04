@@ -63,7 +63,7 @@ namespace Coflnet.Sky.Chat.Services
 
             var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
             if (mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} because {mute.Message ?? "you violated a rule"}");
+                throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires):g}) because {mute.Message ?? "you violated a rule"}");
 
             var dbMessage = new DbMessage()
             {
