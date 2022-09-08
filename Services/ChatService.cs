@@ -59,9 +59,7 @@ namespace Coflnet.Sky.Chat.Services
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
-
-
-            var mute = await db.Mute.Where(u => u.Uuid == message.Uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
+            Mute mute = await GetMute(message.Uuid);
             if (mute != default)
                 throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires):g}) because {mute.Message ?? "you violated a rule"}");
 
@@ -108,6 +106,11 @@ namespace Coflnet.Sky.Chat.Services
             return true;
         }
 
+        private async Task<Mute> GetMute(string uuid)
+        {
+            return await db.Mute.Where(u => u.Uuid == uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
+        }
+
         /// <summary>
         /// Add a mute to an user
         /// </summary>
@@ -145,14 +148,11 @@ namespace Coflnet.Sky.Chat.Services
         public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
         {
             var client = backgroundService.GetClient(clientToken);
-            var mute = await db.Mute.Where(m => m.Uuid == unmute.Uuid && m.Expires > DateTime.UtcNow).FirstOrDefaultAsync();
+            var mute = await GetMute(unmute.Uuid);
             if (mute == null)
                 throw new ApiException("no_mute_found", $"There was no active mute for the user {unmute.Uuid}");
-
-            mute.Status |= MuteStatus.CANCELED;
-            mute.UnMuteClientId = client.Id;
-            mute.UnMuter = unmute.UnMuter;
-            await db.SaveChangesAsync();
+            
+            await DisableMute(unmute, client, mute);
 
             if (!client.Name.Contains("tfm"))
             {
@@ -174,6 +174,14 @@ namespace Coflnet.Sky.Chat.Services
             }
 
             return unmute;
+        }
+
+        private async Task DisableMute(UnMute unmute, Client client, Mute mute)
+        {
+            mute.Status |= MuteStatus.CANCELED;
+            mute.UnMuteClientId = client.Id;
+            mute.UnMuter = unmute.UnMuter;
+            await db.SaveChangesAsync();
         }
 
         /// <summary>
