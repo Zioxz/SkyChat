@@ -126,7 +126,7 @@ namespace Coflnet.Sky.Chat.Services
             if (!client.Name.Contains("tfm"))
             {
                 var apiClient = new RestClient("https://chat.thom.club/");
-                var request = new RestRequest("mute", Method.POST);
+                var request = new RestRequest("mute", Method.Post);
                 var tfm = backgroundService.GetClientByName("tfm");
                 if (tfm == null)
                     return mute;
@@ -157,7 +157,7 @@ namespace Coflnet.Sky.Chat.Services
             if (!client.Name.Contains("tfm"))
             {
                 var apiClient = new RestClient("https://chat.thom.club/");
-                var request = new RestRequest("unmute", Method.POST);
+                var request = new RestRequest("unmute", Method.Post);
                 var tfm = backgroundService.GetClientByName("tfm");
                 if (tfm == null)
                     return unmute;
