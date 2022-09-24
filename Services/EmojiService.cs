@@ -5,7 +5,7 @@ namespace Coflnet.Sky.Chat.Services
     public class EmojiService
     {
         Dictionary<string, string> Emoji = new(){
-            {"tableflip","(ノಠ益ಠ)ノ彡┻━┻"},
+            {"tableflip","§4(ノಠ益ಠ)§7ノ彡┻━┻"},
             {"sad", "☹"},
             {"smile", "☺"},
             {"grin", "ツ"},
