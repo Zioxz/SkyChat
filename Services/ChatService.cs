@@ -100,10 +100,13 @@ namespace Coflnet.Sky.Chat.Services
                     }
                 }
             }
-            message.Message = emojiService.ReplaceIn(message.Message);
 
             var pubsub = connection.GetSubscriber();
-            await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
+            var original = message.Message;
+            message.Message = emojiService.ReplaceIn(message.Message);
+            var replaced = JsonConvert.SerializeObject(message);
+            message.Message = original;
+            await pubsub.PublishAsync("chat", replaced, CommandFlags.FireAndForget);
 
             db.Messages.Add(dbMessage);
             await db.SaveChangesAsync();
