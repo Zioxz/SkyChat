@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Coflnet.Sky.Chat.Services
 {
@@ -77,6 +78,7 @@ namespace Coflnet.Sky.Chat.Services
         internal async Task SendWebhooks(ChatMessage message)
         {
             var client = new HttpClient();
+            message.Message = Regex.Replace(message.Message, @"§.", "");
             var serialized = JsonConvert.SerializeObject(message);
             await Task.WhenAll(Clients.Select(async c =>
             {

@@ -12,7 +12,7 @@ namespace Coflnet.Sky.Chat.Services
             {"heart", "♡"},
             {"skull", "☠"},
             {"airplane", "✈"},
-            {"check", "✔"},
+            {"check", "§2✔"},
         };
 
         public string ReplaceIn(string value)
