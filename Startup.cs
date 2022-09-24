@@ -65,6 +65,7 @@ namespace Coflnet.Sky.Chat
             services.AddHostedService<ChatBackgroundService>(di=>di.GetRequiredService<ChatBackgroundService>());
             services.AddJaeger();
             services.AddTransient<ChatService>();
+            services.AddSingleton<EmojiService>();
             services.AddSingleton<StackExchange.Redis.ConnectionMultiplexer>((config) =>
             {
                 return StackExchange.Redis.ConnectionMultiplexer.Connect(Configuration["REDIS_HOST"]);

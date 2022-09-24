@@ -25,6 +25,7 @@ namespace Coflnet.Sky.Chat.Services
         static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here" };
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
         private ILogger<ChatService> Logger;
+        private EmojiService emojiService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ChatService"/>
@@ -32,12 +33,15 @@ namespace Coflnet.Sky.Chat.Services
         /// <param name="db"></param>
         /// <param name="connection"></param>
         /// <param name="backgroundService"></param>
-        public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService, ILogger<ChatService> logger)
+        /// <param name="logger"></param>
+        /// <param name="emojiService"></param>
+        public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService, ILogger<ChatService> logger, EmojiService emojiService)
         {
             this.db = db;
             this.connection = connection;
             this.backgroundService = backgroundService;
             Logger = logger;
+            this.emojiService = emojiService;
         }
 
         /// <summary>
@@ -96,6 +100,8 @@ namespace Coflnet.Sky.Chat.Services
                     }
                 }
             }
+            message.Message = emojiService.ReplaceIn(message.Message);
+
             var pubsub = connection.GetSubscriber();
             await pubsub.PublishAsync("chat", JsonConvert.SerializeObject(message), CommandFlags.FireAndForget);
 
@@ -151,7 +157,7 @@ namespace Coflnet.Sky.Chat.Services
             var mute = await GetMute(unmute.Uuid);
             if (mute == null)
                 throw new ApiException("no_mute_found", $"There was no active mute for the user {unmute.Uuid}");
-            
+
             await DisableMute(unmute, client, mute);
 
             if (!client.Name.Contains("tfm"))
