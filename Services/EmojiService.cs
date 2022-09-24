@@ -46,7 +46,8 @@ namespace Coflnet.Sky.Chat.Services
             {":dog:", "§6(ᵔᴥᵔ)"},
             {":fyou:", "§6┌∩┐(§4◣§c_§4◢§6)┌∩┐"},
             {":angwyflip:", "§c(ノಠ益ಠ)ノ§f彡§7┻━┻"},
-            {":snipe:", "§e︻デ═一"}
+            {":snipe:", "§e︻デ═一"},
+            {":cofl:", "§1C§6ofl§f"}
         };
 
         public string ReplaceIn(string value)
@@ -55,7 +56,7 @@ namespace Coflnet.Sky.Chat.Services
             {
                 if (!value.Contains(item.Key))
                     continue;
-                value = value.Replace(':' + item.Key + ':', item.Value);
+                value = value.Replace(item.Key, item.Value);
             }
             return value;
         }
