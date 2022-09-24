@@ -19,7 +19,7 @@ namespace Coflnet.Sky.Chat.Services
             {":no:", "§c✖"},
             {":java:", "§b☕"},
             {":arrow", "§e➜"},
-            {":shrug:", "§e¯\_(ツ)_/¯"},
+            {":shrug:", @"§e¯\_(ツ)_/¯"},
             {"o/", "§d( ﾟ◡ﾟ)/"},
             {":123:", "§a1§e2§c3"},
             {":totem:", "§b☉§e_§b☉"},
