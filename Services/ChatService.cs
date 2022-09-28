@@ -130,6 +130,15 @@ namespace Coflnet.Sky.Chat.Services
         {
             var client = backgroundService.GetClient(clientToken);
             mute.ClientId = client.Id;
+            var muteText = mute.Message + mute.Reason;
+            if(muteText.Contains("rule "))
+            {
+                // rule violation
+                var mutes = await db.Mute.Where(u => u.Uuid == mute.Uuid && !u.Status.HasFlag(MuteStatus.CANCELED)).ToListAsync();
+                var firstMessage = await db.Messages.Where(u => u.Sender == mute.Uuid).OrderBy(m => m.Id).FirstOrDefaultAsync();
+                double nextLength = GetMuteTime(mutes, firstMessage.Timestamp);
+                mute.Expires = DateTime.UtcNow + TimeSpan.FromHours(nextLength);
+            }
             db.Add(mute);
             await db.SaveChangesAsync();
             if (!client.Name.Contains("tfm"))
@@ -152,6 +161,22 @@ namespace Coflnet.Sky.Chat.Services
                 Console.WriteLine("mute response: " + response.Content);
             }
             return mute;
+        }
+
+        public static double GetMuteTime(List<Mute> mutes, DateTime firstMessageTime)
+        {
+            var currentTime = 1;
+            foreach (var item in mutes)
+            {
+                if ((item.Reason + item.Message).Contains("rule 1"))
+                    currentTime *= 10;
+                if ((item.Reason + item.Message).Contains("rule 2"))
+                    currentTime *= 3;
+            }
+            var timeSinceJoin = firstMessageTime - DateTime.Now;
+            var reduction = Math.Max(1, Math.Pow(0.7, timeSinceJoin.TotalDays / 30));
+            var nextLength = currentTime / (reduction);
+            return nextLength;
         }
 
         public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
