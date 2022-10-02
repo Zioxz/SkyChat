@@ -65,7 +65,7 @@ namespace Coflnet.Sky.Chat.Services
                 throw new ApiException("message_spam", "Please don't send the same message twice");
             Mute mute = await GetMute(message.Uuid);
             if (mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires):g}) because {mute.Message ?? "you violated a rule"}");
+                throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires).ToString("d'd 'h'h 'm'm 's's'")}) because {mute.Message ?? "you violated a rule"}");
 
             var dbMessage = new DbMessage()
             {
