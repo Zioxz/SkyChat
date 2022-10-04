@@ -65,7 +65,7 @@ namespace Coflnet.Sky.Chat.Services
                 throw new ApiException("message_spam", "Please don't send the same message twice");
             Mute mute = await GetMute(message.Uuid);
             if (mute != default)
-                throw new ApiException("user_muted", $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires).ToString("d'd 'h'h 'm'm 's's'")}) because {mute.Message ?? "you violated a rule"}");
+                throw new ApiException("user_muted", GetMuteMessage(mute));
 
             var dbMessage = new DbMessage()
             {
@@ -115,6 +115,11 @@ namespace Coflnet.Sky.Chat.Services
             return true;
         }
 
+        private static string GetMuteMessage(Mute mute)
+        {
+            return $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires).ToString("d'd 'h'h 'm'm 's's'")}) because {mute.Message ?? "you violated a rule"}";
+        }
+
         private async Task<Mute> GetMute(string uuid)
         {
             return await db.Mute.Where(u => u.Uuid == uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
@@ -153,7 +158,7 @@ namespace Coflnet.Sky.Chat.Services
                     uuid = mute.Uuid,
                     muter = 267680402594988033,
                     until = (long)(mute.Expires - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds,
-                    reason = mute.Reason,
+                    reason = GetMuteMessage(mute),
                     key = tfm.WebhookAuth,
                 };
                 request.AddJsonBody(parameters);
