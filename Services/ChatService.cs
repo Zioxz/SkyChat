@@ -82,6 +82,9 @@ namespace Coflnet.Sky.Chat.Services
             if (BadWords.Any(word => message.Message.ToLower().Contains(word)))
                 throw new ApiException("bad_words", "message contains bad words and was denied");
 
+            if(message.Message.ToLower().Contains("get binmaster"))
+                throw new ApiException("illegal_script", "Binmaster violates the hypixel terms of service. Violating the TOS can get your account banned and wiped.");
+
             var tries = 0;
             while (string.IsNullOrEmpty(message.Name))
             {
