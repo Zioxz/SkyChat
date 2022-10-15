@@ -161,7 +161,7 @@ namespace Coflnet.Sky.Chat.Services
                     uuid = mute.Uuid,
                     muter = 267680402594988033,
                     until = (long)(mute.Expires - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds,
-                    reason = GetMuteMessage(mute),
+                    reason = mute.Message,
                     key = tfm.WebhookAuth,
                 };
                 request.AddJsonBody(parameters);
