@@ -49,7 +49,7 @@ namespace Coflnet.Sky.Chat.Services
 
         internal Client GetClientByName(string clientName)
         {
-            return Clients.Values.Where(c=>c.Name == clientName).FirstOrDefault();
+            return Clients.Values.Where(c => c.Name == clientName).FirstOrDefault();
         }
 
         /// <summary>
@@ -87,9 +87,13 @@ namespace Coflnet.Sky.Chat.Services
 
                 if (c.Value.Name.Contains("tfm"))
                 {
-                    if(message.ClientName.Contains("tfm"))
+                    if (message.ClientName.Contains("tfm"))
                         return;
-                    content = new StringContent(JsonConvert.SerializeObject(new {
+                    var msg = Regex.Replace(message.Message, @"[^a-z0-9]", "");
+                    if (msg.Contains("kys") || msg.Contains("fag") || msg.Contains("retard"))
+                        return; // automute mutes that for a long time
+                    content = new StringContent(JsonConvert.SerializeObject(new
+                    {
                         uuid = message.Uuid,
                         isPremium = true,
                         message = message.Message,

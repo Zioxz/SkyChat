@@ -22,7 +22,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         private static RestClient restClient = new RestClient("https://sky.coflnet.com");
         private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here" };
+        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard " };
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
         private ILogger<ChatService> Logger;
         private EmojiService emojiService;
@@ -63,10 +63,6 @@ namespace Coflnet.Sky.Chat.Services
             var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
             if (existsAlready)
                 throw new ApiException("message_spam", "Please don't send the same message twice");
-            Mute mute = await GetMute(message.Uuid);
-            if (mute != default)
-                throw new ApiException("user_muted", GetMuteMessage(mute));
-
             var dbMessage = new DbMessage()
             {
                 ClientId = client.Id,
@@ -74,16 +70,19 @@ namespace Coflnet.Sky.Chat.Services
                 Sender = message.Uuid,
                 Timestamp = DateTime.Now
             };
-
             recentMessages.Enqueue(dbMessage);
             if (recentMessages.Count >= 10)
                 recentMessages.TryDequeue(out _);
-
-            if (BadWords.Any(word => message.Message.ToLower().Contains(word)))
-                throw new ApiException("bad_words", "message contains bad words and was denied");
-
-            if(message.Message.ToLower().Contains("get binmaster"))
-                throw new ApiException("illegal_script", "Binmaster violates the hypixel terms of service. Violating the TOS can get your account banned and wiped.");
+            try
+            {
+                await AssertMessageSendable(message);
+            }
+            catch (ApiException)
+            {
+                db.Messages.Add(dbMessage);
+                await db.SaveChangesAsync();
+                throw;
+            }
 
             var tries = 0;
             while (string.IsNullOrEmpty(message.Name))
@@ -118,6 +117,19 @@ namespace Coflnet.Sky.Chat.Services
             return true;
         }
 
+        private async Task AssertMessageSendable(ChatMessage message)
+        {
+            Mute mute = await GetMute(message.Uuid);
+            if (mute != default)
+                throw new ApiException("user_muted", GetMuteMessage(mute));
+            var normalizedMsg = message.Message.ToLower();
+            if (BadWords.Any(word => normalizedMsg.Contains(word)))
+                throw new ApiException("bad_words", "message contains bad words and was denied");
+
+            if (normalizedMsg.Contains("get binmaster"))
+                throw new ApiException("illegal_script", "Binmaster violates the hypixel terms of service. Violating the TOS can get your account banned and wiped.");
+        }
+
         private static string GetMuteMessage(Mute mute)
         {
             return $"You are muted until {mute.Expires.ToString("F")} ({(DateTime.UtcNow - mute.Expires).ToString("d'd 'h'h 'm'm 's's'")}) because {mute.Message ?? "you violated a rule"}";
@@ -139,7 +151,7 @@ namespace Coflnet.Sky.Chat.Services
             var client = backgroundService.GetClient(clientToken);
             mute.ClientId = client.Id;
             var muteText = mute.Message + mute.Reason;
-            if(muteText.Contains("rule "))
+            if (muteText.Contains("rule "))
             {
                 // rule violation
                 var mutes = await db.Mute.Where(u => u.Uuid == mute.Uuid && !u.Status.HasFlag(MuteStatus.CANCELED)).ToListAsync();
