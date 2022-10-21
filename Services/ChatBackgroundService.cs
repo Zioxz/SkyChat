@@ -89,7 +89,7 @@ namespace Coflnet.Sky.Chat.Services
                 {
                     if (message.ClientName.Contains("tfm"))
                         return;
-                    var msg = Regex.Replace(message.Message, @"[^a-z0-9]", "");
+                    var msg = Regex.Replace(LeetSpeakConverter.Normalize(message.Message.ToLower()), @"[^a-z]", "");
                     if (msg.Contains("kys") || msg.Contains("fag") || msg.Contains("retard"))
                         return; // automute mutes that for a long time
                     content = new StringContent(JsonConvert.SerializeObject(new
