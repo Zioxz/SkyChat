@@ -22,7 +22,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         private static RestClient restClient = new RestClient("https://sky.coflnet.com");
         private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard " };
+        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard ", " qf "};
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
         private ILogger<ChatService> Logger;
         private EmojiService emojiService;
@@ -122,7 +122,7 @@ namespace Coflnet.Sky.Chat.Services
             Mute mute = await GetMute(message.Uuid);
             if (mute != default)
                 throw new ApiException("user_muted", GetMuteMessage(mute));
-            var normalizedMsg = message.Message.ToLower();
+            var normalizedMsg = message.Message.ToLower() + ' ';
             if (BadWords.Any(word => normalizedMsg.Contains(word)))
                 throw new ApiException("bad_words", "message contains bad words and was denied");
 
