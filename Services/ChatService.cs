@@ -22,7 +22,7 @@ namespace Coflnet.Sky.Chat.Services
         private ChatBackgroundService backgroundService;
         private static RestClient restClient = new RestClient("https://sky.coflnet.com");
         private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard ", " qf "};
+        static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard ", " qf " };
         static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
         private ILogger<ChatService> Logger;
         private EmojiService emojiService;
@@ -60,9 +60,7 @@ namespace Coflnet.Sky.Chat.Services
             if (message.ClientName != client.Name)
                 throw new ApiException("token_mismatch", "Client name does not match with the provided token");
 
-            var existsAlready = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
-            if (existsAlready)
-                throw new ApiException("message_spam", "Please don't send the same message twice");
+            ThrowIfSpam(message);
             var dbMessage = new DbMessage()
             {
                 ClientId = client.Id,
@@ -115,6 +113,14 @@ namespace Coflnet.Sky.Chat.Services
             _ = Task.Run(async () => await backgroundService.SendWebhooks(message));
             messagesSent.Inc();
             return true;
+        }
+
+        private static void ThrowIfSpam(ChatMessage message)
+        {
+            var wasLastMessage = recentMessages.OrderByDescending(m => m.Timestamp).Take(1).Where(f => f.Sender == message.Uuid && f.Content == message.Message).Any();
+            var alreadySentLong = recentMessages.Where(f => f.Sender == message.Uuid && f.Content == message.Message && message.Message.Length > 6).Any();
+            if (wasLastMessage || alreadySentLong)
+                throw new ApiException("message_spam", "Please don't send the same message twice");
         }
 
         private async Task AssertMessageSendable(ChatMessage message)
