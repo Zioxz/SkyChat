@@ -19,14 +19,16 @@ namespace Coflnet.Sky.Chat.Controllers
     public class ChatController : ControllerBase
     {
         private readonly ChatService service;
+        private readonly MuteService muteService;
 
         /// <summary>
         /// Creates a new instance of <see cref="ChatController"/>
         /// </summary>
         /// <param name="service"></param>
-        public ChatController(ChatService service)
+        public ChatController(ChatService service, MuteService muteService)
         {
             this.service = service;
+            this.muteService = muteService;
         }
 
         /// <summary>
@@ -73,7 +75,7 @@ namespace Coflnet.Sky.Chat.Controllers
         public async Task<Mute> MuteUser([FromBody] Mute mute, [FromHeader]string authorization)
         {
             AssertAuthHeader(authorization);
-            return await service.MuteUser(mute, authorization);
+            return await muteService.MuteUser(mute, authorization);
         }
         /// <summary>
         /// Create a new mute for an user
@@ -86,7 +88,7 @@ namespace Coflnet.Sky.Chat.Controllers
         public async Task<UnMute> UnMuteUser([FromBody] UnMute mute, [FromHeader]string authorization)
         {
             AssertAuthHeader(authorization);
-            return await service.UnMuteUser(mute, authorization);
+            return await muteService.UnMuteUser(mute, authorization);
         }
     }
 }
