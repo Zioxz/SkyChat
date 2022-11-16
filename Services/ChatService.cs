@@ -230,7 +230,7 @@ public class MuteService
         var timeSinceJoin = firstMessageTime - DateTime.Now;
         var reduction = Math.Max(1, Math.Pow(0.7, timeSinceJoin.TotalDays / 30));
         var nextLength = currentTime / (reduction);
-        return nextLength;
+        return Math.Max(nextLength, 1);
     }
 
     public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
