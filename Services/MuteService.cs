@@ -143,6 +143,7 @@ public interface IMuteProducer
 public class MuteProducer : IMuteProducer
 {
     IConfiguration config;
+    private static RestClient restClient = new RestClient("https://sky.coflnet.com");
     public MuteProducer(IConfiguration config)
     {
         this.config = config;
@@ -157,6 +158,24 @@ public class MuteProducer : IMuteProducer
         };
 
         using var producer = new ProducerBuilder<string, string>(producerConfig).Build();
-        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message = $"User {mute.Uuid} was muted for {mute.Reason}", channel = "mutes" }) });
+        string name = await GetName(mute);
+        var message = $"🔇 User {name} was muted by {mute.Muter} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}";
+        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
+    }
+
+    private static async Task<string> GetName(Mute mute)
+    {
+        var name = mute.Uuid;
+        var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", mute.Uuid));
+        try
+        {
+            name = JsonConvert.DeserializeObject<string>(result.Content);
+        }
+        catch (Exception)
+        {
+            Console.WriteLine("could not get name for mute " + result.Content);
+        }
+
+        return name;
     }
 }
