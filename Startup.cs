@@ -67,6 +67,7 @@ namespace Coflnet.Sky.Chat
             services.AddTransient<ChatService>();
             services.AddTransient<MuteService>();
             services.AddSingleton<EmojiService>();
+            services.AddSingleton<IMuteProducer, MuteProducer>();
             services.AddSingleton<StackExchange.Redis.ConnectionMultiplexer>((config) =>
             {
                 return StackExchange.Redis.ConnectionMultiplexer.Connect(Configuration["REDIS_HOST"]);
