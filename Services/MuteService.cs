@@ -65,7 +65,7 @@ public class MuteService
             var response = await apiClient.ExecuteAsync(request);
             Console.WriteLine("mute response: " + response.Content);
         }
-        producer.Produce(mute);
+        await producer.Produce(mute);
         return mute;
     }
 
@@ -137,7 +137,7 @@ public class MuteService
 
 public interface IMuteProducer
 {
-    void Produce(Mute mute);
+    Task Produce(Mute mute);
 }
 
 public class MuteProducer : IMuteProducer
@@ -148,15 +148,15 @@ public class MuteProducer : IMuteProducer
         this.config = config;
     }
 
-    public void Produce(Mute mute)
+    public async Task Produce(Mute mute)
     {
         ProducerConfig producerConfig = new ProducerConfig
         {
             BootstrapServers = config["KAFKA_HOST"],
-            LingerMs = 200
+            LingerMs = 0
         };
 
         using var producer = new ProducerBuilder<string, string>(producerConfig).Build();
-        producer.Produce(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message = $"User {mute.Uuid} was muted for {mute.Reason}", channel = "mutes" }) });
+        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message = $"User {mute.Uuid} was muted for {mute.Reason}", channel = "mutes" }) });
     }
 }
