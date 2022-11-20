@@ -158,18 +158,18 @@ public class MuteProducer : IMuteProducer
         };
 
         using var producer = new ProducerBuilder<string, string>(producerConfig).Build();
-        string name = await GetName(mute);
-        var message = $"🔇 User {name} was muted by {mute.Muter} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}";
+        string name = await GetName(mute.Uuid);
+        var message = $"🔇 User {name} was muted by {await GetName(mute.Muter)} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}>";
         await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
     }
 
-    private static async Task<string> GetName(Mute mute)
+    private static async Task<string> GetName(string id)
     {
-        var name = mute.Uuid;
-        var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", mute.Uuid));
+        var name = id;
+        var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", id));
         try
         {
-            name = JsonConvert.DeserializeObject<string>(result.Content);
+            name = result.Content;
         }
         catch (Exception)
         {
