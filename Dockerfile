@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:7.0 as build
+ARG dotnetversion=7.0
+FROM mcr.microsoft.com/dotnet/sdk:${dotnetversion} as build
 WORKDIR /build
 RUN git clone --depth=1 https://github.com/Coflnet/HypixelSkyblock.git dev
 WORKDIR /build/sky
@@ -7,10 +8,10 @@ RUN dotnet restore
 COPY . .
 RUN dotnet publish -c release
 
-FROM mcr.microsoft.com/dotnet/aspnet:7.0
+FROM mcr.microsoft.com/dotnet/aspnet:${dotnetversion}
 WORKDIR /app
 
-COPY --from=build /build/sky/bin/release/net7.0/publish/ .
+COPY --from=build /build/sky/bin/release/net${dotnetversion}/publish/ .
 
 ENV ASPNETCORE_URLS=http://+:8000
 

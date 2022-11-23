@@ -9,20 +9,84 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Confluent.Kafka;
+using Microsoft.Extensions.Logging;
 
 namespace Coflnet.Sky.Chat.Services;
 
-public class MuteService
+public interface IMuteService
+{
+    Task<Mute> MuteUser(Mute mute, string clientToken);
+    Task<UnMute> UnMuteUser(UnMute unmute, string clientToken);
+}
+
+public class TfmMuteService : IMuteService
+{
+    private ChatBackgroundService backgroundService;
+    private ILogger<TfmMuteService> logger;
+
+    public TfmMuteService(ChatBackgroundService backgroundService, ILogger<TfmMuteService> logger)
+    {
+        this.backgroundService = backgroundService;
+        this.logger = logger;
+    }
+
+    public async Task<Mute> MuteUser(Mute mute, string clientToken)
+    {
+        var client = backgroundService.GetClient(clientToken);
+        if (client.Name.Contains("tfm"))
+            return mute;
+
+        var apiClient = new RestClient("https://chat.thom.club/");
+        var request = new RestRequest("mute", Method.Post);
+        var tfm = backgroundService.GetClientByName("tfm");
+        if (tfm == null)
+            return mute;
+        var parameters = new
+        {
+            uuid = mute.Uuid,
+            muter = 267680402594988033,
+            until = (long)(mute.Expires - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds,
+            reason = mute.Message,
+            key = tfm.WebhookAuth,
+        };
+        request.AddJsonBody(parameters);
+        var response = await apiClient.ExecuteAsync(request);
+        logger.LogInformation("mute response: {response}", response.Content);
+        return mute;
+    }
+    public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
+    {
+        var client = backgroundService.GetClient(clientToken);
+        if (client.Name.Contains("tfm"))
+            return unmute;
+        var apiClient = new RestClient("https://chat.thom.club/");
+        var request = new RestRequest("unmute", Method.Post);
+        var tfm = backgroundService.GetClientByName("tfm");
+        if (tfm == null)
+            return unmute;
+        var parameters = new
+        {
+            uuid = unmute.Uuid,
+            unmuter = 267680402594988033,
+            reason = unmute.Reason,
+            key = tfm.WebhookAuth,
+        };
+        request.AddJsonBody(parameters);
+        var response = await apiClient.ExecuteAsync(request);
+        logger.LogInformation("unmute response: {response}", response.Content);
+        return unmute;
+    }
+}
+
+public class MuteService : IMuteService
 {
     private ChatDbContext db;
     private ChatBackgroundService backgroundService;
-    private IMuteProducer producer;
 
-    public MuteService(ChatDbContext db, ChatBackgroundService backgroundService, IMuteProducer producer)
+    public MuteService(ChatDbContext db, ChatBackgroundService backgroundService)
     {
         this.db = db;
         this.backgroundService = backgroundService;
-        this.producer = producer;
     }
 
     /// <summary>
@@ -46,26 +110,6 @@ public class MuteService
         }
         db.Add(mute);
         await db.SaveChangesAsync();
-        if (!client.Name.Contains("tfm"))
-        {
-            var apiClient = new RestClient("https://chat.thom.club/");
-            var request = new RestRequest("mute", Method.Post);
-            var tfm = backgroundService.GetClientByName("tfm");
-            if (tfm == null)
-                return mute;
-            var parameters = new
-            {
-                uuid = mute.Uuid,
-                muter = 267680402594988033,
-                until = (long)(mute.Expires - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds,
-                reason = mute.Message,
-                key = tfm.WebhookAuth,
-            };
-            request.AddJsonBody(parameters);
-            var response = await apiClient.ExecuteAsync(request);
-            Console.WriteLine("mute response: " + response.Content);
-        }
-        await producer.Produce(mute);
         return mute;
     }
 
@@ -93,26 +137,6 @@ public class MuteService
             throw new ApiException("no_mute_found", $"There was no active mute for the user {unmute.Uuid}");
 
         await DisableMute(unmute, client, mute);
-
-        if (!client.Name.Contains("tfm"))
-        {
-            var apiClient = new RestClient("https://chat.thom.club/");
-            var request = new RestRequest("unmute", Method.Post);
-            var tfm = backgroundService.GetClientByName("tfm");
-            if (tfm == null)
-                return unmute;
-            var parameters = new
-            {
-                uuid = mute.Uuid,
-                unmuter = 267680402594988033,
-                reason = unmute.Reason,
-                key = tfm.WebhookAuth,
-            };
-            request.AddJsonBody(parameters);
-            var response = await apiClient.ExecuteAsync(request);
-            Console.WriteLine("unmute response: " + response.Content);
-        }
-
         return unmute;
     }
 
@@ -135,12 +159,8 @@ public class MuteService
     }
 }
 
-public interface IMuteProducer
-{
-    Task Produce(Mute mute);
-}
 
-public class MuteProducer : IMuteProducer
+public class MuteProducer : IMuteService
 {
     IConfiguration config;
     private static RestClient restClient = new RestClient("https://sky.coflnet.com");
@@ -149,18 +169,43 @@ public class MuteProducer : IMuteProducer
         this.config = config;
     }
 
-    public async Task Produce(Mute mute)
+    public async Task<Mute> MuteUser(Mute mute, string clientToken)
+    {
+        string name = await GetName(mute.Uuid);
+        var message = $"🔇 User {name} was muted by {await GetName(mute.Muter)} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}>";
+        await ProduceMessage(message);
+        return mute;
+    }
+
+    private async Task ProduceMessage(string message)
+    {
+        using var producer = GetProducer();
+        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
+    }
+    
+    /// <summary>
+    /// Produce unmute
+    /// </summary>
+    /// <param name="unmute"></param>
+    /// <param name="clientToken"></param>
+    /// <returns></returns>
+    public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
+    {
+        string name = await GetName(unmute.Uuid);
+        var message = $"🔇 User {name} was unmuted by {await GetName(unmute.UnMuter)} for `{unmute.Reason}`";
+        await ProduceMessage(message);
+        return unmute;
+    }
+
+    private IProducer<string, string> GetProducer()
     {
         ProducerConfig producerConfig = new ProducerConfig
         {
             BootstrapServers = config["KAFKA_HOST"],
             LingerMs = 0
         };
-
-        using var producer = new ProducerBuilder<string, string>(producerConfig).Build();
-        string name = await GetName(mute.Uuid);
-        var message = $"🔇 User {name} was muted by {await GetName(mute.Muter)} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}>";
-        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
+        var producer = new ProducerBuilder<string, string>(producerConfig).Build();
+        return producer;
     }
 
     private static async Task<string> GetName(string id)
