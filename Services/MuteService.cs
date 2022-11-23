@@ -192,7 +192,7 @@ public class MuteProducer : IMuteService
     public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
     {
         string name = await GetName(unmute.Uuid);
-        var message = $"🔇 User {name} was unmuted by {await GetName(unmute.UnMuter)} for `{unmute.Reason}`";
+        var message = $"🔈 User {name} was unmuted by {await GetName(unmute.UnMuter)} for `{unmute.Reason}`";
         await ProduceMessage(message);
         return unmute;
     }
@@ -214,7 +214,7 @@ public class MuteProducer : IMuteService
         var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", id));
         try
         {
-            name = result.Content;
+            name = JsonConvert.DeserializeObject<string>(result.Content);
         }
         catch (Exception)
         {
