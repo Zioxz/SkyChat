@@ -6,12 +6,12 @@ WORKDIR /build/sky
 COPY SkyChat.csproj SkyChat.csproj
 RUN dotnet restore
 COPY . .
-RUN dotnet publish -c release
+RUN dotnet publish -c release -o /artifact
 
 FROM mcr.microsoft.com/dotnet/aspnet:${dotnetversion}
 WORKDIR /app
 
-COPY --from=build /build/sky/bin/release/net${dotnetversion}/publish/ .
+COPY --from=build /artifact .
 
 ENV ASPNETCORE_URLS=http://+:8000
 
