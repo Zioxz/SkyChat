@@ -118,9 +118,12 @@ public class MuteService : IMuteService
         var currentTime = 1;
         foreach (var item in mutes)
         {
-            if ((item.Reason + item.Message).Contains("rule 1"))
+            var text = item.Reason + item.Message;
+            if (text.ToLower().StartsWith("tfm"))
+                continue;
+            if (text.Contains("rule 1"))
                 currentTime *= 10;
-            if ((item.Reason + item.Message).Contains("rule 2"))
+            else if (text.Contains("rule 2"))
                 currentTime *= 3;
         }
         var timeSinceJoin = firstMessageTime - DateTime.Now;
@@ -182,7 +185,7 @@ public class MuteProducer : IMuteService
         using var producer = GetProducer();
         await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
     }
-    
+
     /// <summary>
     /// Produce unmute
     /// </summary>
