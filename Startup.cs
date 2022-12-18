@@ -63,7 +63,7 @@ namespace Coflnet.Sky.Chat
             );
             services.AddSingleton<ChatBackgroundService>();
             services.AddHostedService<ChatBackgroundService>(di=>di.GetRequiredService<ChatBackgroundService>());
-            services.AddJaeger();
+            services.AddJaeger(Configuration);
             services.AddTransient<ChatService>();
             services.AddTransient<MuteService>();
             services.AddTransient<IMuteService, MuteService>();

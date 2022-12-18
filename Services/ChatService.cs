@@ -109,8 +109,8 @@ public class ChatService
         message.Message = emojiService.ReplaceIn(message.Message);
         var replaced = JsonConvert.SerializeObject(message);
         message.Message = original;
-        await pubsub.PublishAsync("chat", replaced, CommandFlags.FireAndForget);
-
+        var response = await pubsub.PublishAsync("chat", replaced);
+        Console.WriteLine($"Sent message to {response} clients");
         db.Messages.Add(dbMessage);
         await db.SaveChangesAsync();
         _ = Task.Run(async () => await backgroundService.SendWebhooks(message));
