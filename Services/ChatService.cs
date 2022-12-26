@@ -135,8 +135,8 @@ public class ChatService
         if (BadWords.Any(word => normalizedMsg.Contains(word)))
             throw new ApiException("bad_words", "message contains bad words and was denied");
 
-        if (normalizedMsg.Contains("get binmaster"))
-            throw new ApiException("illegal_script", "Binmaster violates the hypixel terms of service. Violating the TOS can get your account banned and wiped.");
+        if (normalizedMsg.Contains(" binmaster"))
+            throw new ApiException("illegal_script", "Binmaster violates the hypixel terms of service. Violating the TOS can get your account banned and wiped. Also writing about it in flipper chat gets you muted by TFM.");
     }
 
     private static string GetMuteMessage(Mute mute)
