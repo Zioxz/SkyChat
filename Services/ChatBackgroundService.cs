@@ -106,6 +106,7 @@ namespace Coflnet.Sky.Chat.Services
                     Content = content
                 };
                 request.Headers.Add("Authorization", hook.WebhookAuth);
+
                 await client.SendAsync(request);
             }));
         }

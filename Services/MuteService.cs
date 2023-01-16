@@ -36,8 +36,8 @@ public class TfmMuteService : IMuteService
         if (client.Name.Contains("tfm"))
             return mute;
 
-        var apiClient = new RestClient("https://chat.thom.club/");
-        var request = new RestRequest("mute", Method.Post);
+        var apiClient = new RestClient("https://sky.coflnet.com/");
+        var request = new RestRequest("tfm/chat/mute", Method.Post);
         var tfm = backgroundService.GetClientByName("tfm");
         if (tfm == null)
             return mute;
@@ -59,8 +59,8 @@ public class TfmMuteService : IMuteService
         var client = backgroundService.GetClient(clientToken);
         if (client.Name.Contains("tfm"))
             return unmute;
-        var apiClient = new RestClient("https://chat.thom.club/");
-        var request = new RestRequest("unmute", Method.Post);
+        var apiClient = new RestClient("https://sky.coflnet.com");
+        var request = new RestRequest("tfm/chat/unmute", Method.Post);
         var tfm = backgroundService.GetClientByName("tfm");
         if (tfm == null)
             return unmute;
