@@ -62,7 +62,7 @@ namespace Coflnet.Sky.Chat
                     .EnableDetailedErrors()       // <-- with debugging (remove for production).
             );
             services.AddSingleton<ChatBackgroundService>();
-            services.AddHostedService<ChatBackgroundService>(di=>di.GetRequiredService<ChatBackgroundService>());
+            services.AddHostedService<ChatBackgroundService>(di => di.GetRequiredService<ChatBackgroundService>());
             services.AddJaeger(Configuration);
             services.AddTransient<ChatService>();
             services.AddTransient<MuteService>();
@@ -70,6 +70,10 @@ namespace Coflnet.Sky.Chat
             services.AddTransient<IMuteService, TfmMuteService>();
             services.AddSingleton<IMuteService, MuteProducer>();
             services.AddSingleton<EmojiService>();
+            services.AddSingleton<PlayerName.Client.Api.IPlayerNameApi>(sp =>
+            {
+                return new PlayerName.Client.Api.PlayerNameApi(Configuration["PLAYERNAME_BASE_URL"]);
+            });
             services.AddSingleton<StackExchange.Redis.ConnectionMultiplexer>((config) =>
             {
                 return StackExchange.Redis.ConnectionMultiplexer.Connect(Configuration["REDIS_HOST"]);

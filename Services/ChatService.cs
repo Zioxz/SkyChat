@@ -9,6 +9,7 @@ using RestSharp;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Coflnet.Sky.PlayerName.Client.Api;
 
 namespace Coflnet.Sky.Chat.Services;
 
@@ -20,9 +21,9 @@ public class ChatService
     private ChatDbContext db;
     private ConnectionMultiplexer connection;
     private ChatBackgroundService backgroundService;
-    private static RestClient restClient = new RestClient("https://sky.coflnet.com");
+    private IPlayerNameApi playerNameApi;
     private static ConcurrentQueue<DbMessage> recentMessages = new ConcurrentQueue<DbMessage>();
-    static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard ", " qf ", " kys "};
+    static HashSet<string> BadWords = new() { " cock ", "penis ", " ass ", "b.com", "my ah", "/ah ", "/auction", "@everyone", "@here", " retard ", " qf ", " kys " };
     static Prometheus.Counter messagesSent = Prometheus.Metrics.CreateCounter("sky_chat_messages_sent", "Count of messages distributed");
     private ILogger<ChatService> Logger;
     private EmojiService emojiService;
@@ -37,7 +38,14 @@ public class ChatService
     /// <param name="logger"></param>
     /// <param name="emojiService"></param>
     /// <param name="muteService"></param>
-    public ChatService(ChatDbContext db, ConnectionMultiplexer connection, ChatBackgroundService backgroundService, ILogger<ChatService> logger, EmojiService emojiService, MuteService muteService)
+    /// <param name="playerNameApi"></param>
+    public ChatService(ChatDbContext db,
+        ConnectionMultiplexer connection,
+        ChatBackgroundService backgroundService,
+        ILogger<ChatService> logger,
+        EmojiService emojiService,
+        MuteService muteService,
+        IPlayerNameApi playerNameApi)
     {
         this.db = db;
         this.connection = connection;
@@ -45,6 +53,7 @@ public class ChatService
         Logger = logger;
         this.emojiService = emojiService;
         this.muteService = muteService;
+        this.playerNameApi = playerNameApi;
     }
 
     /// <summary>
@@ -85,24 +94,7 @@ public class ChatService
             throw;
         }
 
-        var tries = 0;
-        while (string.IsNullOrEmpty(message.Name))
-        {
-            var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", message.Uuid));
-            try
-            {
-                message.Name = JsonConvert.DeserializeObject<string>(result.Content);
-            }
-            catch (Exception)
-            {
-                Console.WriteLine(result.Content);
-                if (tries++ > 3)
-                {
-                    message.Name = "invalid name";
-                    break;
-                }
-            }
-        }
+        await FillName(message);
 
         var pubsub = connection.GetSubscriber();
         var original = message.Message;
@@ -116,6 +108,21 @@ public class ChatService
         _ = Task.Run(async () => await backgroundService.SendWebhooks(message));
         messagesSent.Inc();
         return true;
+    }
+
+    private async Task FillName(ChatMessage message)
+    {
+        var tries = 0;
+        while (string.IsNullOrEmpty(message.Name))
+        {
+            var result = await playerNameApi.PlayerNameNameUuidGetAsync(message.Uuid);
+            message.Name = result;
+            if (tries++ > 3)
+            {
+                message.Name = "invalid name";
+                break;
+            }
+        }
     }
 
     private static void ThrowIfSpam(ChatMessage message)

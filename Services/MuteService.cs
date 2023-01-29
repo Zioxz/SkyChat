@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Confluent.Kafka;
 using Microsoft.Extensions.Logging;
+using Coflnet.Sky.PlayerName.Client.Api;
 
 namespace Coflnet.Sky.Chat.Services;
 
@@ -166,10 +167,11 @@ public class MuteService : IMuteService
 public class MuteProducer : IMuteService
 {
     IConfiguration config;
-    private static RestClient restClient = new RestClient("https://sky.coflnet.com");
-    public MuteProducer(IConfiguration config)
+    private IPlayerNameApi playerNameApi;
+    public MuteProducer(IConfiguration config, IPlayerNameApi playerNameApi)
     {
         this.config = config;
+        this.playerNameApi = playerNameApi;
     }
 
     public async Task<Mute> MuteUser(Mute mute, string clientToken)
@@ -211,19 +213,18 @@ public class MuteProducer : IMuteService
         return producer;
     }
 
-    private static async Task<string> GetName(string id)
+    private async Task<string> GetName(string id)
     {
-        var name = id;
-        var result = await restClient.ExecuteAsync(new RestRequest("/api/player/{playerUuid}/name").AddUrlSegment("playerUuid", id));
+        var result = await playerNameApi.PlayerNameNameUuidGetAsync(id);
         try
         {
-            name = JsonConvert.DeserializeObject<string>(result.Content);
+            return await playerNameApi.PlayerNameNameUuidGetAsync(id);
         }
         catch (Exception)
         {
-            Console.WriteLine("could not get name for mute " + result.Content);
+            Console.WriteLine("could not get name for mute " + id);
         }
 
-        return name;
+        return id;
     }
 }
