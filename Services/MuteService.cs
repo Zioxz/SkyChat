@@ -151,7 +151,7 @@ public class MuteService : IMuteService
     /// <returns></returns>
     public async Task<Mute> GetMute(string uuid)
     {
-        return await db.Mute.Where(u => u.Uuid == uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).FirstOrDefaultAsync();
+        return await db.Mute.Where(u => u.Uuid == uuid && u.Expires > DateTime.UtcNow && !u.Status.HasFlag(MuteStatus.CANCELED)).OrderByDescending(m => m.Expires).FirstOrDefaultAsync();
     }
 
     private async Task DisableMute(UnMute unmute, Client client, Mute mute)
