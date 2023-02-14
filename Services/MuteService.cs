@@ -177,7 +177,7 @@ public class MuteProducer : IMuteService
     public async Task<Mute> MuteUser(Mute mute, string clientToken)
     {
         string name = await GetName(mute.Uuid);
-        var message = $"🔇 User {name} was muted by {await GetName(mute.Muter)} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}>";
+        var message = $"🔇 User {name} was muted by {await GetName(mute.Muter)} for `{mute.Reason}` until <t:{new DateTimeOffset(mute.Expires).ToUnixTimeSeconds()}> message: {mute.Message}";
         await ProduceMessage(message);
         return mute;
     }
@@ -219,7 +219,7 @@ public class MuteProducer : IMuteService
         try
         {
             var name = await playerNameApi.PlayerNameNameUuidGetAsync(id);
-            if(!string.IsNullOrEmpty(name))
+            if (!string.IsNullOrEmpty(name))
                 return name;
         }
         catch (Exception)
