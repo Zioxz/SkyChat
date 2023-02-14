@@ -218,7 +218,9 @@ public class MuteProducer : IMuteService
         var result = await playerNameApi.PlayerNameNameUuidGetAsync(id);
         try
         {
-            return await playerNameApi.PlayerNameNameUuidGetAsync(id);
+            var name = await playerNameApi.PlayerNameNameUuidGetAsync(id);
+            if(!string.IsNullOrEmpty(name))
+                return name;
         }
         catch (Exception)
         {
