@@ -55,14 +55,14 @@ public class TfmMuteService : IMuteService
         {
             try
             {
-                var response = await apiClient.ExecuteAsync(request);
+                var response = await apiClient.ExecuteAsync(request).ConfigureAwait(false);
                 logger.LogInformation("mute response: {response}", response.Content);
             }
             catch (Exception e)
             {
                 logger.LogError(e, "Error while sending mute to tfm");
             }
-        });
+        }).ConfigureAwait(false);
         return mute;
     }
     public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
@@ -195,7 +195,7 @@ public class MuteProducer : IMuteService
     private async Task ProduceMessage(string message)
     {
         using var producer = GetProducer();
-        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) });
+        await producer.ProduceAsync(config["TOPICS:DISCORD_MESSAGE"], new() { Value = JsonConvert.SerializeObject(new { message, channel = "mutes" }) }).ConfigureAwait(false);
     }
 
     /// <summary>
