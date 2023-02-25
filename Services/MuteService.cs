@@ -51,8 +51,18 @@ public class TfmMuteService : IMuteService
             key = tfm.WebhookAuth,
         };
         request.AddJsonBody(parameters);
-        var response = await apiClient.ExecuteAsync(request);
-        logger.LogInformation("mute response: {response}", response.Content);
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var response = await apiClient.ExecuteAsync(request);
+                logger.LogInformation("mute response: {response}", response.Content);
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Error while sending mute to tfm");
+            }
+        });
         return mute;
     }
     public async Task<UnMute> UnMuteUser(UnMute unmute, string clientToken)
