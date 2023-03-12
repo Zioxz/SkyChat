@@ -17,7 +17,7 @@ namespace Coflnet.Sky.Chat.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [ProducesResponseType(typeof(ErrorResponse), 500)]
+    [ProducesResponseType(typeof(ErrorResponse), 500), ProducesResponseType(200)]
     public class ChatController : ControllerBase
     {
         private readonly ChatService service;
@@ -92,7 +92,6 @@ namespace Coflnet.Sky.Chat.Controllers
         [HttpDelete]
         [Route("mute")]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
-        [ProducesResponseType(typeof(UnMute), 200)]
         public async Task<UnMute> UnMuteUser([FromBody] UnMute mute, [FromHeader] string authorization)
         {
             AssertAuthHeader(authorization);
