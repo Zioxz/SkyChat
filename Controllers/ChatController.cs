@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections;
 using System.Collections.Generic;
 using Coflnet.Sky.Chat.Services;
+using Coflnet.Sky.Core;
 
 namespace Coflnet.Sky.Chat.Controllers
 {
@@ -16,6 +17,7 @@ namespace Coflnet.Sky.Chat.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [ProducesResponseType(typeof(ErrorResponse), 500)]
     public class ChatController : ControllerBase
     {
         private readonly ChatService service;
@@ -40,7 +42,8 @@ namespace Coflnet.Sky.Chat.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("send")]
-        public async Task<ChatMessage> SendMessage([FromBody] ChatMessage flip, [FromHeader]string authorization)
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        public async Task<ChatMessage> SendMessage([FromBody] ChatMessage flip, [FromHeader] string authorization)
         {
             AssertAuthHeader(authorization);
             await service.SendMessage(flip, authorization);
@@ -73,7 +76,8 @@ namespace Coflnet.Sky.Chat.Controllers
         /// <returns></returns>
         [HttpPost]
         [Route("mute")]
-        public async Task<Mute> MuteUser([FromBody] Mute mute, [FromHeader]string authorization)
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        public async Task<Mute> MuteUser([FromBody] Mute mute, [FromHeader] string authorization)
         {
             AssertAuthHeader(authorization);
             await Task.WhenAll(muteServices.Select(s => s.MuteUser(mute, authorization)));
@@ -87,7 +91,8 @@ namespace Coflnet.Sky.Chat.Controllers
         /// <returns></returns>
         [HttpDelete]
         [Route("mute")]
-        public async Task<UnMute> UnMuteUser([FromBody] UnMute mute, [FromHeader]string authorization)
+        [ProducesResponseType(typeof(ErrorResponse), 400)]
+        public async Task<UnMute> UnMuteUser([FromBody] UnMute mute, [FromHeader] string authorization)
         {
             AssertAuthHeader(authorization);
             foreach (var service in muteServices)
