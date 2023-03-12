@@ -92,6 +92,7 @@ namespace Coflnet.Sky.Chat.Controllers
         [HttpDelete]
         [Route("mute")]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
+        [ProducesResponseType(typeof(UnMute), 200)]
         public async Task<UnMute> UnMuteUser([FromBody] UnMute mute, [FromHeader] string authorization)
         {
             AssertAuthHeader(authorization);
