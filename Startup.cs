@@ -18,14 +18,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json;
 using OpenTracing;
 using OpenTracing.Util;
 using Prometheus;
 
 namespace Coflnet.Sky.Chat
 {
-    public class Startup
+    public partial class Startup
     {
         public Startup(IConfiguration configuration)
         {
@@ -38,7 +37,10 @@ namespace Coflnet.Sky.Chat
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(o=>{
+                // always serialize to UTC
+                o.JsonSerializerOptions.Converters.Add(new DateTimeConverter());
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SkyChat", Version = "v1" });
@@ -101,7 +103,7 @@ namespace Coflnet.Sky.Chat
             app.UseRouting();
 
             app.UseAuthorization();
-            
+
             app.UseExceptionHandler(errorApp =>
             {
                 ErrorHandler.Add(errorApp, "chat");

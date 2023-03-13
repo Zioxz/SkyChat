@@ -137,7 +137,7 @@ public class MuteService : IMuteService
             else if (text.Contains("rule 2"))
                 currentTime *= 3;
         }
-        var timeSinceJoin = firstMessageTime - DateTime.Now;
+        var timeSinceJoin = firstMessageTime - DateTime.UtcNow;
         var reduction = Math.Max(1, Math.Pow(0.7, timeSinceJoin.TotalDays / 30));
         var nextLength = currentTime / (reduction);
         return Math.Max(nextLength, 1);

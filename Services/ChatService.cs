@@ -78,7 +78,7 @@ public class ChatService
             ClientId = client.Id,
             Content = message.Message,
             Sender = message.Uuid,
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.UtcNow
         };
         recentMessages.Enqueue(dbMessage);
         if (recentMessages.Count >= 10)
